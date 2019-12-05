@@ -60,6 +60,8 @@ and with_query is:
 TABLE [ ONLY ] table_name [ * ]
 */
 type StmtSelect struct {
+	builder.SelectStatement
+
 	stmt *Stmt
 
 	target builder.SqlExpr
