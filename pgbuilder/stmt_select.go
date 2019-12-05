@@ -85,34 +85,34 @@ func (s StmtSelect) From(model builder.Model) *StmtSelect {
 	return &s
 }
 
-func (s *StmtSelect) Join(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
-	return s.join(target, joinCondition, "INNER")
+func (s StmtSelect) Join(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
+	s.additions = append(s.additions, builder.Join(s.stmt.T(target)).On(joinCondition))
+	return &s
 }
 
-func (s *StmtSelect) CrossJoin(target builder.Model) *StmtSelect {
-	return s.join(target, nil, "CROSS")
+func (s StmtSelect) CrossJoin(target builder.Model) *StmtSelect {
+	s.additions = append(s.additions, builder.CrossJoin(s.stmt.T(target)))
+	return &s
 }
 
-func (s *StmtSelect) LeftJoin(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
-	return s.join(target, joinCondition, "LEFT")
+func (s StmtSelect) LeftJoin(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
+	s.additions = append(s.additions, builder.LeftJoin(s.stmt.T(target)).On(joinCondition))
+	return &s
 }
 
-func (s *StmtSelect) RightJoin(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
-	return s.join(target, joinCondition, "RIGHT")
+func (s StmtSelect) RightJoin(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
+	s.additions = append(s.additions, builder.RightJoin(s.stmt.T(target)).On(joinCondition))
+	return &s
 }
 
-func (s *StmtSelect) FullJoin(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
-	return s.join(target, joinCondition, "FULL")
-}
-
-func (s StmtSelect) join(target builder.Model, joinCondition builder.SqlCondition, prefixes ...string) *StmtSelect {
-	s.additions = append(s.additions, builder.Join(s.stmt.T(target), prefixes...).On(joinCondition))
+func (s StmtSelect) FullJoin(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
+	s.additions = append(s.additions, builder.FullJoin(s.stmt.T(target)).On(joinCondition))
 	return &s
 }
 
 func (s StmtSelect) Where(where builder.SqlCondition, additions ...builder.Addition) *StmtSelect {
 	s.where = where
-	s.additions = additions
+	s.additions = append(s.additions, additions...)
 	return &s
 }
 
