@@ -9,6 +9,13 @@ type ConditionBuilder interface {
 	ToCondition(db sqlx.DBExecutor) builder.SqlCondition
 }
 
+func ToCondition(db sqlx.DBExecutor, b ConditionBuilder) builder.SqlCondition {
+	if b == nil {
+		return builder.EmptyCond()
+	}
+	return b.ToCondition(db)
+}
+
 func ConditionBuilderFromCondition(c builder.SqlCondition) ConditionBuilder {
 	return &conditionWrapper{condition: c}
 }
