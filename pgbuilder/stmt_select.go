@@ -152,13 +152,13 @@ func (s *StmtSelect) List(list sqlx.ScanIterator, pager *Pager) error {
 
 	total := -1
 
-	finalAdditions := s.additions
+	otherAdditions := builder.Additions{}
 
 	if pager.Size != -1 {
-		finalAdditions = append(s.additions, builder.Limit(pager.Size).Offset(pager.Offset))
+		otherAdditions = append(otherAdditions, builder.Limit(pager.Size).Offset(pager.Offset))
 	}
 
-	if err := s.Where(s.where, finalAdditions...).Scan(list); err != nil {
+	if err := s.Where(s.where, otherAdditions...).Scan(list); err != nil {
 		return err
 	}
 
