@@ -115,6 +115,22 @@ func TestStmt(t *testing.T) {
 		t.Expect(count > 0).To(gomega.BeTrue())
 	}))
 
+	t.Run("update from", testingx.It(func(t *testingx.T) {
+		err := pgbuilder.Use(db).
+			Update(&User{}).
+			From(&UserRole{}).
+			SetWith(
+				pgbuilder.RecordValues{
+					(&UserRole{}).FieldUpdatedAt(),
+				},
+				(&User{}).FieldUpdatedAt(),
+			).
+			Where((&UserRole{}).FieldCreatedAt().Eq((&User{}).FieldCreatedAt())).
+			Do()
+
+		t.Expect(err).To(gomega.BeNil())
+	}))
+
 	t.Run("delete soft", testingx.It(func(t *testingx.T) {
 		err := pgbuilder.Use(db).
 			Delete(&User{}).

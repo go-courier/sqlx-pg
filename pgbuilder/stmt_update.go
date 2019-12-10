@@ -32,6 +32,7 @@ type StmtUpdate struct {
 	stmt      *Stmt
 	modifiers []string
 	model     builder.Model
+	from      builder.Model
 	where     builder.SqlCondition
 	rc        *RecordCollection
 }
@@ -46,6 +47,11 @@ func (s *StmtUpdate) Do() error {
 
 func (s *StmtUpdate) IsNil() bool {
 	return s.stmt == nil || s.model == nil || s.rc == nil
+}
+
+func (s StmtUpdate) From(from builder.Model) *StmtUpdate {
+	s.from = from
+	return &s
 }
 
 func (s StmtUpdate) Where(where builder.SqlCondition) *StmtUpdate {
@@ -93,10 +99,33 @@ func (s *StmtUpdate) Ex(ctx context.Context) *builder.Ex {
 	}
 
 	return s.stmt.ExprBy(func(ctx context.Context) *builder.Ex {
-		return builder.
-			Update(s.stmt.T(s.model), s.modifiers...).
-			Where(where).
-			Set(rc.AsAssignments()...).
-			Ex(ctx)
+		e := builder.Expr("UPDATE")
+
+		if len(s.modifiers) > 0 {
+			for i := range s.modifiers {
+				e.WriteByte(' ')
+				e.WriteString(s.modifiers[i])
+			}
+		}
+
+		e.WriteByte(' ')
+		e.WriteExpr(s.stmt.db.T(s.model))
+
+		e.WriteString(" SET ")
+
+		builder.WriteAssignments(e, s.rc.AsAssignments()...)
+
+		if s.from != nil {
+			ctx = builder.ContextWithToggles(ctx, builder.Toggles{
+				builder.ToggleMultiTable: true,
+			})
+
+			e.WriteString(" FROM ")
+			e.WriteExpr(s.stmt.db.T(s.from))
+		}
+
+		builder.WriteAdditions(e, builder.Where(s.where))
+
+		return e.Ex(ctx)
 	}).Ex(ctx)
 }
