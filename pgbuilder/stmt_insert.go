@@ -102,10 +102,12 @@ func (s StmtInsert) OnConflictDoUpdateSet(indexKey string, excludedColumns ...*b
 }
 
 func (s *StmtInsert) Ex(ctx context.Context) *builder.Ex {
-	return builder.Insert().
-		Into(s.stmt.T(s.model), s.additions...).
-		Values(s.rc.Columns, s.rc.Values()...).
-		Ex(ctx)
+	return s.stmt.ExprBy(func(ctx context.Context) *builder.Ex {
+		return builder.Insert().
+			Into(s.stmt.T(s.model), s.additions...).
+			Values(s.rc.Columns, s.rc.Values()...).
+			Ex(ctx)
+	}).Ex(ctx)
 }
 
 func Excluded(f *builder.Column) builder.SqlExpr {

@@ -129,13 +129,15 @@ func (s *StmtSelect) Ex(ctx context.Context) *builder.Ex {
 		builder.Where(where),
 	}
 
-	return builder.
-		Select(s.target).
-		From(
-			s.stmt.T(s.from),
-			append(finalAdditions, s.additions...)...,
-		).
-		Ex(ctx)
+	return s.stmt.ExprBy(func(ctx context.Context) *builder.Ex {
+		return builder.
+			Select(s.target).
+			From(
+				s.stmt.T(s.from),
+				append(finalAdditions, s.additions...)...,
+			).
+			Ex(ctx)
+	}).Ex(ctx)
 }
 
 func (s *StmtSelect) Scan(v interface{}) error {

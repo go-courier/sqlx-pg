@@ -23,9 +23,10 @@ var (
 		Extensions: []string{"postgis"},
 	}
 
-	DB        = sqlx.NewFeatureDatabase("test_for_pg_builder")
-	TableUser = DB.Register(&User{})
-	db        sqlx.DBExecutor
+	DB            = sqlx.NewFeatureDatabase("test_for_pg_builder")
+	TableUser     = DB.Register(&User{})
+	TableUserRole = DB.Register(&UserRole{})
+	db            sqlx.DBExecutor
 )
 
 func init() {
@@ -96,18 +97,18 @@ func TestStmt(t *testing.T) {
 	t.Run("with Select", testingx.It(func(t *testingx.T) {
 		count := 0
 
+		vUser := builder.T("v_user", builder.Col("f_name"), builder.Col("f_age"))
+
 		err := pgbuilder.Use(db).
-			With(builder.T("v_user", builder.Col("f_name"), builder.Col("f_age")), func(stmt *pgbuilder.Stmt, model builder.Model) builder.SqlExpr {
-				return stmt.
+			With(pgbuilder.AsWithQuery(vUser, func(db sqlx.DBExecutor) builder.SqlExpr {
+				return pgbuilder.Use(db).
 					Select(builder.MultiMayAutoAlias(
-						stmt.T(model).Col("f_name"),
-						stmt.T(model).Col("f_age"),
+						vUser.Col("f_name"),
+						vUser.Col("f_age"),
 					)).From(&User{}).
-					Where(stmt.T(model).Col("f_age").Gt(1))
-			}).
-			Exec(func(stmt *pgbuilder.Stmt, models ...builder.Model) builder.SqlExpr {
-				return stmt.Select(builder.Count()).From(models[0])
-			}).
+					Where(vUser.Col("f_age").Gt(1))
+			})).
+			Select(builder.Count()).From(vUser).
 			Scan(&count)
 
 		t.Expect(err).To(gomega.BeNil())
@@ -204,6 +205,34 @@ func (User) FieldCreatedAt() *builder.Column {
 
 func (User) FieldUpdatedAt() *builder.Column {
 	return TableUser.F("UpdatedAt")
+}
+
+type UserRole struct {
+	ID     uint64 `db:"f_id,autoincrement"`
+	UserID uint64 `db:"f_user_id"`
+	OperationTimes
+}
+
+func (UserRole) TableName() string {
+	return "t_user_role"
+}
+
+func (UserRole) PrimaryKey() []string {
+	return []string{"ID"}
+}
+
+func (UserRole) Indexes() builder.Indexes {
+	return builder.Indexes{
+		"i_user_role": {"UserID"},
+	}
+}
+
+func (UserRole) FieldUpdatedAt() *builder.Column {
+	return TableUserRole.F("UpdatedAt")
+}
+
+func (UserRole) FieldCreatedAt() *builder.Column {
+	return TableUserRole.F("CreatedAt")
 }
 
 type OperationTimes struct {

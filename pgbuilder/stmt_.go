@@ -17,7 +17,22 @@ type CouldScan interface {
 }
 
 type Stmt struct {
-	db sqlx.DBExecutor
+	db   sqlx.DBExecutor
+	with *StmtWith
+}
+
+func (s *Stmt) ExprBy(do func(ctx context.Context) *builder.Ex) builder.SqlExpr {
+	return builder.ExprBy(func(ctx context.Context) *builder.Ex {
+		e := builder.Expr("")
+		if !s.with.IsNil() {
+			e.WriteExpr(s.with)
+			e.WriteByte('\n')
+		}
+
+		e.WriteExpr(do(ctx))
+
+		return e.Ex(ctx)
+	})
 }
 
 const PrimaryKey = "pk"

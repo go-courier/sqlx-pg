@@ -64,10 +64,12 @@ func (s *StmtDelete) Ex(ctx context.Context) *builder.Ex {
 		}
 	}
 
-	return builder.
-		Delete().
-		From(table, append(builder.Additions{builder.Where(s.where)})...).
-		Ex(ctx)
+	return s.stmt.ExprBy(func(ctx context.Context) *builder.Ex {
+		return builder.
+			Delete().
+			From(table, append(builder.Additions{builder.Where(s.where)})...).
+			Ex(ctx)
+	}).Ex(ctx)
 }
 
 func (s *StmtDelete) Do() error {

@@ -40,7 +40,13 @@ func RecordCollectionWith(recordValues RecordValues, columns ...*builder.Column)
 
 func RecordCollectionBy(collect func(rc *RecordCollection), columns ...*builder.Column) *RecordCollection {
 	cols := &builder.Columns{}
-	cols.Add(columns...)
+	for i := range columns {
+		col := columns[i]
+		if col == nil {
+			panic(fmt.Errorf("invalid %d of columns", i))
+		}
+		cols.Add(col)
+	}
 
 	rc := &RecordCollection{
 		Columns: cols,
@@ -65,7 +71,7 @@ func (vc *RecordCollection) IsNil() bool {
 
 func (vc *RecordCollection) SetRecordValues(values ...interface{}) {
 	if len(values) != vc.Columns.Len() {
-		panic(fmt.Errorf("len of records is not matched"))
+		panic(fmt.Errorf("len of records is not matched, need %d, got %d", vc.Columns.Len(), len(values)))
 	}
 
 	vc.records = append(vc.records, values)

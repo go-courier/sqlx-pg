@@ -92,9 +92,11 @@ func (s *StmtUpdate) Ex(ctx context.Context) *builder.Ex {
 		}
 	}
 
-	return builder.
-		Update(s.stmt.T(s.model), s.modifiers...).
-		Where(where).
-		Set(rc.AsAssignments()...).
-		Ex(ctx)
+	return s.stmt.ExprBy(func(ctx context.Context) *builder.Ex {
+		return builder.
+			Update(s.stmt.T(s.model), s.modifiers...).
+			Where(where).
+			Set(rc.AsAssignments()...).
+			Ex(ctx)
+	}).Ex(ctx)
 }
