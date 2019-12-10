@@ -88,7 +88,7 @@ func TestStmt(t *testing.T) {
 	t.Run("select", testingx.It(func(t *testingx.T) {
 		dataList := &UserDataList{}
 
-		err := dataList.DoList(db, nil, &pgbuilder.Pager{Size: -1})
+		err := dataList.DoList(db, &pgbuilder.Pager{Size: -1})
 
 		t.Expect(err).To(gomega.BeNil())
 		t.Expect(len(dataList.Data) >= 1).To(gomega.BeTrue())
@@ -166,10 +166,10 @@ func (u *UserDataList) Next(v interface{}) error {
 	return nil
 }
 
-func (u *UserDataList) DoList(db sqlx.DBExecutor, conditionBuilder pgbuilder.ConditionBuilder, pager *pgbuilder.Pager, additions ...builder.Addition) error {
+func (u *UserDataList) DoList(db sqlx.DBExecutor, pager *pgbuilder.Pager, additions ...builder.Addition) error {
 	return pgbuilder.Use(db).Select(nil).
 		From(&User{}).
-		Where(pgbuilder.ToCondition(db, conditionBuilder), additions...).
+		Where(u.ToCondition(db), additions...).
 		List(u, pager)
 }
 
