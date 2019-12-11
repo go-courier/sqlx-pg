@@ -10,9 +10,8 @@ import (
 	"github.com/go-courier/sqlx/v2/datatypes"
 	"github.com/go-courier/sqlx/v2/migration"
 	"github.com/go-courier/sqlx/v2/postgresqlconnector"
-	"github.com/go-courier/testingx"
 	"github.com/google/uuid"
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,7 +39,7 @@ func init() {
 }
 
 func TestStmt(t *testing.T) {
-	t.Run("insert single", testingx.It(func(t *testingx.T) {
+	t.Run("insert single", func(t *testing.T) {
 		user := &User{
 			Name: "test",
 		}
@@ -52,21 +51,21 @@ func TestStmt(t *testing.T) {
 			Returning(builder.Expr("*")).
 			Scan(user)
 
-		t.Expect(err).To(gomega.BeNil())
-		t.Expect(user.ID).NotTo(gomega.Equal(0))
-	}))
+		NewWithT(t).Expect(err).To(BeNil())
+		NewWithT(t).Expect(user.ID).NotTo(Equal(0))
+	})
 
-	t.Run("update simple", testingx.It(func(t *testingx.T) {
+	t.Run("update simple", func(t *testing.T) {
 		err := pgbuilder.Use(db).
 			Update(&User{}).
 			SetWith(pgbuilder.RecordValues{uuid.New()}, TableUser.F("Name")).
 			Where(TableUser.F("Name").Eq("test")).
 			Do()
 
-		t.Expect(err).To(gomega.BeNil())
-	}))
+		NewWithT(t).Expect(err).To(BeNil())
+	})
 
-	t.Run("insert multi", testingx.It(func(t *testingx.T) {
+	t.Run("insert multi", func(t *testing.T) {
 		err := pgbuilder.Use(db).
 			Insert().Into(&User{}).
 			ValuesBy(
@@ -82,19 +81,19 @@ func TestStmt(t *testing.T) {
 			OnConflictDoNothing(pgbuilder.PrimaryKey).
 			Do()
 
-		t.Expect(err).To(gomega.BeNil())
-	}))
+		NewWithT(t).Expect(err).To(BeNil())
+	})
 
-	t.Run("select", testingx.It(func(t *testingx.T) {
+	t.Run("select", func(t *testing.T) {
 		dataList := &UserDataList{}
 
 		err := dataList.DoList(db, &pgbuilder.Pager{Size: -1})
 
-		t.Expect(err).To(gomega.BeNil())
-		t.Expect(len(dataList.Data) >= 1).To(gomega.BeTrue())
-	}))
+		NewWithT(t).Expect(err).To(BeNil())
+		NewWithT(t).Expect(len(dataList.Data) >= 1).To(BeTrue())
+	})
 
-	t.Run("with Select", testingx.It(func(t *testingx.T) {
+	t.Run("with Select", func(t *testing.T) {
 		count := 0
 
 		vUser := builder.T("v_user", builder.Col("f_name"), builder.Col("f_age"))
@@ -111,11 +110,11 @@ func TestStmt(t *testing.T) {
 			Select(builder.Count()).From(vUser).
 			Scan(&count)
 
-		t.Expect(err).To(gomega.BeNil())
-		t.Expect(count > 0).To(gomega.BeTrue())
-	}))
+		NewWithT(t).Expect(err).To(BeNil())
+		NewWithT(t).Expect(count > 0).To(BeTrue())
+	})
 
-	t.Run("update from", testingx.It(func(t *testingx.T) {
+	t.Run("update from", func(t *testing.T) {
 		err := pgbuilder.Use(db).
 			Update(&User{}).
 			From(&UserRole{}).
@@ -128,24 +127,24 @@ func TestStmt(t *testing.T) {
 			Where((&UserRole{}).FieldCreatedAt().Eq((&User{}).FieldCreatedAt())).
 			Do()
 
-		t.Expect(err).To(gomega.BeNil())
-	}))
+		NewWithT(t).Expect(err).To(BeNil())
+	})
 
-	t.Run("delete soft", testingx.It(func(t *testingx.T) {
+	t.Run("delete soft", func(t *testing.T) {
 		err := pgbuilder.Use(db).
 			Delete(&User{}).
 			Do()
 
-		t.Expect(err).To(gomega.BeNil())
-	}))
+		NewWithT(t).Expect(err).To(BeNil())
+	})
 
-	t.Run("delete ignore deletedAt", testingx.It(func(t *testingx.T) {
+	t.Run("delete ignore deletedAt", func(t *testing.T) {
 		err := pgbuilder.Use(db.WithContext(pgbuilder.ContextWithIgnoreDeletedAt(db.Context()))).
 			Delete(&User{}).
 			Do()
 
-		t.Expect(err).To(gomega.BeNil())
-	}))
+		NewWithT(t).Expect(err).To(BeNil())
+	})
 }
 
 type UserParams struct {
