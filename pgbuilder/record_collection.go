@@ -70,8 +70,12 @@ func (vc *RecordCollection) IsNil() bool {
 }
 
 func (vc *RecordCollection) SetRecordValues(values ...interface{}) {
-	if len(values) != vc.Columns.Len() {
-		panic(fmt.Errorf("len of records is not matched, need %d, got %d", vc.Columns.Len(), len(values)))
+	if len(values) == 1 {
+		if _, ok := values[0].(builder.SelectStatement); !ok {
+			if len(values) != vc.Columns.Len() {
+				panic(fmt.Errorf("len of records is not matched, need %d, got %d", vc.Columns.Len(), len(values)))
+			}
+		}
 	}
 
 	vc.records = append(vc.records, values)

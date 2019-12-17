@@ -35,7 +35,7 @@ func TestFromKVCondition(t *testing.T) {
 
 	e := s.Ex(context.Background())
 
-	sql, err := pgutils.InterpolateParams(context.Background(), e)
+	sql, err := pgutils.InterpolateParams(e)
 	NewWithT(t).Expect(err).To(BeNil())
 	fmt.Println(sql)
 }

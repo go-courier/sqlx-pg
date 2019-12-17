@@ -84,6 +84,21 @@ func TestStmt(t *testing.T) {
 		NewWithT(t).Expect(err).To(BeNil())
 	})
 
+	t.Run("insert from select", func(t *testing.T) {
+		stmt := pgbuilder.Use(db).
+			Insert().Into(&User{}).
+			ValuesWith(
+				pgbuilder.RecordValues{
+					pgbuilder.Use(db).Select(TableUser.MustFields("Name", "Age")).From(&User{}),
+				},
+				TableUser.F("Name"),
+				TableUser.F("Age"),
+			).
+			OnConflictDoNothing("i_name")
+
+		NewWithT(t).Expect(stmt.Do()).To(BeNil())
+	})
+
 	t.Run("select", func(t *testing.T) {
 		dataList := &UserDataList{}
 
