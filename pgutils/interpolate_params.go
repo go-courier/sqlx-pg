@@ -3,6 +3,7 @@ package pgutils
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -10,7 +11,11 @@ import (
 	"github.com/go-courier/sqlx/v2/builder"
 )
 
-func InterpolateParams(ctx context.Context, sqlExpr builder.SqlExpr) (string, error) {
+func InterpolateParams(sqlExpr builder.SqlExpr) (string, error) {
+	return InterpolateParamsContext(context.Background(), sqlExpr)
+}
+
+func InterpolateParamsContext(ctx context.Context, sqlExpr builder.SqlExpr) (string, error) {
 	if builder.IsNilExpr(sqlExpr) {
 		return "", nil
 	}
@@ -41,16 +46,11 @@ func interpolateParams(query string, args []interface{}, loc *time.Location) ([]
 		buf = append(buf, query[i:i+q]...)
 		i += q
 
-		arg := args[argPos]
-		argPos++
-
-		if valuer, ok := arg.(driver.Valuer); ok {
-			v, err := valuer.Value()
-			if err != nil {
-				return nil, err
-			}
-			arg = v
+		arg, err := driver.DefaultParameterConverter.ConvertValue(args[argPos])
+		if err != nil {
+			return nil, err
 		}
+		argPos++
 
 		if arg == nil {
 			buf = append(buf, "NULL"...)
@@ -58,28 +58,8 @@ func interpolateParams(query string, args []interface{}, loc *time.Location) ([]
 		}
 
 		switch v := arg.(type) {
-		case int:
-			buf = strconv.AppendInt(buf, int64(v), 10)
-		case int8:
-			buf = strconv.AppendInt(buf, int64(v), 10)
-		case int16:
-			buf = strconv.AppendInt(buf, int64(v), 10)
-		case int32:
-			buf = strconv.AppendInt(buf, int64(v), 10)
 		case int64:
 			buf = strconv.AppendInt(buf, v, 10)
-		case uint:
-			buf = strconv.AppendUint(buf, uint64(v), 10)
-		case uint8:
-			buf = strconv.AppendUint(buf, uint64(v), 10)
-		case uint16:
-			buf = strconv.AppendUint(buf, uint64(v), 10)
-		case uint32:
-			buf = strconv.AppendUint(buf, uint64(v), 10)
-		case uint64:
-			buf = strconv.AppendUint(buf, v, 10)
-		case float32:
-			buf = strconv.AppendFloat(buf, float64(v), 'g', -1, 64)
 		case float64:
 			buf = strconv.AppendFloat(buf, v, 'g', -1, 64)
 		case bool:
@@ -146,7 +126,7 @@ func interpolateParams(query string, args []interface{}, loc *time.Location) ([]
 			buf = escapeBytesBackslash(buf, []byte(v))
 			buf = append(buf, '\'')
 		default:
-			return nil, driver.ErrSkip
+			return nil, fmt.Errorf("unsupported type %T: %v", v, v)
 		}
 	}
 	if argPos != len(args) {
