@@ -5,10 +5,6 @@ import (
 	"github.com/go-courier/sqlx/v2/builder"
 )
 
-type ConditionBuilder interface {
-	ToCondition(db sqlx.DBExecutor) builder.SqlCondition
-}
-
 func ToCondition(db sqlx.DBExecutor, b ConditionBuilder) builder.SqlCondition {
 	if b == nil {
 		return builder.EmptyCond()
@@ -16,14 +12,89 @@ func ToCondition(db sqlx.DBExecutor, b ConditionBuilder) builder.SqlCondition {
 	return b.ToCondition(db)
 }
 
+type ConditionBuilder interface {
+	ToCondition(db sqlx.DBExecutor) builder.SqlCondition
+}
+
 func ConditionBuilderFromCondition(c builder.SqlCondition) ConditionBuilder {
-	return &conditionWrapper{condition: c}
+	return ConditionBuilderBy(func(db sqlx.DBExecutor) builder.SqlCondition {
+		return c
+	})
 }
 
-type conditionWrapper struct {
-	condition builder.SqlCondition
+func ConditionBuilderBy(build func(db sqlx.DBExecutor) builder.SqlCondition) ConditionBuilder {
+	return &conditionBuilder{build: build}
 }
 
-func (c *conditionWrapper) ToCondition(db sqlx.DBExecutor) builder.SqlCondition {
-	return c.condition
+type conditionBuilder struct {
+	build func(db sqlx.DBExecutor) builder.SqlCondition
+}
+
+func (c *conditionBuilder) ToCondition(db sqlx.DBExecutor) builder.SqlCondition {
+	return c.build(db)
+}
+
+func OneOf(builders ...ConditionBuilder) ConditionBuilder {
+	return &conditionBuilderCompose{
+		typ:      "or",
+		builders: builders,
+	}
+}
+
+func AllOf(builders ...ConditionBuilder) ConditionBuilder {
+	return &conditionBuilderCompose{
+		typ:      "all",
+		builders: builders,
+	}
+}
+
+type conditionBuilderCompose struct {
+	typ      string
+	builders []ConditionBuilder
+}
+
+func (c *conditionBuilderCompose) ToCondition(db sqlx.DBExecutor) builder.SqlCondition {
+	where := builder.EmptyCond()
+
+	for i := range c.builders {
+		b := c.builders[i]
+		if b == nil {
+			continue
+		}
+
+		sub := b.ToCondition(db)
+
+		if builder.IsNilExpr(sub) {
+			continue
+		}
+
+		switch c.typ {
+		case "or":
+			where = where.Or(sub)
+		case "all":
+			where = where.And(sub)
+		}
+	}
+
+	return where
+}
+
+type SubConditionBuilder interface {
+	ConditionBuilder
+	SelectFrom(db sqlx.DBExecutor) *StmtSelect
+}
+
+func SubSelect(target *builder.Column, subConditionBuilder SubConditionBuilder) ConditionBuilder {
+	return ConditionBuilderBy(func(db sqlx.DBExecutor) builder.SqlCondition {
+		if subConditionBuilder == nil {
+			return nil
+		}
+
+		where := subConditionBuilder.ToCondition(db)
+		if builder.IsNilExpr(where) {
+			return nil
+		}
+
+		return target.In(subConditionBuilder.SelectFrom(db).Where(where))
+	})
 }

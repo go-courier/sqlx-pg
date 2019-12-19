@@ -86,33 +86,33 @@ func (s StmtSelect) From(model builder.Model) *StmtSelect {
 }
 
 func (s StmtSelect) Join(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
-	s.additions = append(s.additions, builder.Join(s.stmt.T(target)).On(joinCondition))
+	s.additions = append(append(builder.Additions{}, s.additions...), builder.Join(s.stmt.T(target)).On(joinCondition))
 	return &s
 }
 
 func (s StmtSelect) CrossJoin(target builder.Model) *StmtSelect {
-	s.additions = append(s.additions, builder.CrossJoin(s.stmt.T(target)))
+	s.additions = append(append(builder.Additions{}, s.additions...), builder.CrossJoin(s.stmt.T(target)))
 	return &s
 }
 
 func (s StmtSelect) LeftJoin(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
-	s.additions = append(s.additions, builder.LeftJoin(s.stmt.T(target)).On(joinCondition))
+	s.additions = append(append(builder.Additions{}, s.additions...), builder.LeftJoin(s.stmt.T(target)).On(joinCondition))
 	return &s
 }
 
 func (s StmtSelect) RightJoin(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
-	s.additions = append(s.additions, builder.RightJoin(s.stmt.T(target)).On(joinCondition))
+	s.additions = append(append(builder.Additions{}, s.additions...), builder.RightJoin(s.stmt.T(target)).On(joinCondition))
 	return &s
 }
 
 func (s StmtSelect) FullJoin(target builder.Model, joinCondition builder.SqlCondition) *StmtSelect {
-	s.additions = append(s.additions, builder.FullJoin(s.stmt.T(target)).On(joinCondition))
+	s.additions = append(append(builder.Additions{}, s.additions...), builder.FullJoin(s.stmt.T(target)).On(joinCondition))
 	return &s
 }
 
 func (s StmtSelect) Where(where builder.SqlCondition, additions ...builder.Addition) *StmtSelect {
 	s.where = where
-	s.additions = append(s.additions, additions...)
+	s.additions = append(append(builder.Additions{}, s.additions...), additions...)
 	return &s
 }
 

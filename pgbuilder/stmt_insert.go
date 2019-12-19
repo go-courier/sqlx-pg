@@ -87,7 +87,7 @@ func (s StmtInsert) OnConflictDoNothing(indexKey string) *StmtInsert {
 		return &s
 	}
 	onConflict := builder.OnConflict(conflictColumns).DoNothing()
-	s.additions = append(s.additions, onConflict)
+	s.additions = append(append(builder.Additions{}, s.additions...), onConflict)
 	return &s
 }
 
@@ -97,7 +97,7 @@ func (s StmtInsert) OnConflictDoUpdateSet(indexKey string, excludedColumns ...*b
 		return &s
 	}
 	onConflict := builder.OnConflict(conflictColumns).DoUpdateSet(ExcludedFields(excludedColumns...)...)
-	s.additions = append(s.additions, onConflict)
+	s.additions = append(append(builder.Additions{}, s.additions...), onConflict)
 	return &s
 }
 
