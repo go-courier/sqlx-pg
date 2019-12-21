@@ -75,11 +75,6 @@ func (s *StmtSelect) IsNil() bool {
 	return s == nil || s.stmt == nil || s.from == nil
 }
 
-func (s StmtSelect) Select(target builder.SqlExpr) *StmtSelect {
-	s.target = target
-	return &s
-}
-
 func (s StmtSelect) From(model builder.Model) *StmtSelect {
 	s.from = model
 	return &s
@@ -171,7 +166,12 @@ func (s *StmtSelect) List(list sqlx.ScanIterator, pager *Pager) error {
 			targetForCount = withCountExpr.CountExpr(s.stmt.db)
 		}
 
-		if err := s.Select(targetForCount).Scan(&total); err != nil {
+		if err := s.stmt.
+			Select(targetForCount).
+			From(s.from).
+			Where(s.where, FilterAdditions(s.additions, func(a builder.Addition) bool {
+				return !builder.IsNilExpr(a) && a.AdditionType() != builder.AdditionOrderBy
+			})...).Scan(&total); err != nil {
 			return err
 		}
 	}
@@ -181,4 +181,14 @@ func (s *StmtSelect) List(list sqlx.ScanIterator, pager *Pager) error {
 	}
 
 	return nil
+}
+
+func FilterAdditions(additions builder.Additions, filter func(a builder.Addition) bool) builder.Additions {
+	finalAdditions := builder.Additions{}
+	for i := range additions {
+		if filter(additions[i]) {
+			finalAdditions = append(finalAdditions, additions[i])
+		}
+	}
+	return finalAdditions
 }

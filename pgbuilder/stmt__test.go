@@ -99,13 +99,14 @@ func TestStmt(t *testing.T) {
 		NewWithT(t).Expect(stmt.Do()).To(BeNil())
 	})
 
-	t.Run("select", func(t *testing.T) {
+	t.Run("list", func(t *testing.T) {
 		dataList := &UserDataList{}
 
-		err := dataList.DoList(db, &pgbuilder.Pager{Size: -1})
+		err := dataList.DoList(db, &pgbuilder.Pager{Size: 10})
 
 		NewWithT(t).Expect(err).To(BeNil())
 		NewWithT(t).Expect(len(dataList.Data) >= 1).To(BeTrue())
+		NewWithT(t).Expect(dataList.Total >= 1).To(BeTrue())
 	})
 
 	t.Run("with Select", func(t *testing.T) {
