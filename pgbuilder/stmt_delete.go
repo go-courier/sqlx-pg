@@ -53,7 +53,12 @@ func (s *StmtDelete) Ex(ctx context.Context) *builder.Ex {
 		if modelWithDeleted, ok := s.model.(ModelWithDeletedAt); ok {
 			return s.stmt.
 				Update(s.model).
-				Where(s.where).
+				Where(
+					builder.And(
+						s.where,
+						modelWithDeleted.FieldDeletedAt().Eq(0),
+					),
+				).
 				SetBy(
 					func(vc *RecordCollection) {
 						vc.SetRecordValues(datatypes.Timestamp(time.Now()))
