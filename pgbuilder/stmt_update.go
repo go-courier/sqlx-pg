@@ -124,7 +124,7 @@ func (s *StmtUpdate) Ex(ctx context.Context) *builder.Ex {
 			e.WriteExpr(s.stmt.db.T(s.from))
 		}
 
-		builder.WriteAdditions(e, builder.Where(s.where))
+		builder.WriteAdditions(e, builder.Where(where))
 
 		return e.Ex(ctx)
 	}).Ex(ctx)

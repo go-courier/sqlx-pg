@@ -147,7 +147,8 @@ func TestStmt(t *testing.T) {
 	})
 
 	t.Run("delete soft", func(t *testing.T) {
-		err := pgbuilder.Use(db).
+		err := pgbuilder.
+			Use(db).
 			Delete(&User{}).
 			Do()
 
