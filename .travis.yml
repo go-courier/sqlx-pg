@@ -22,7 +22,8 @@ env:
   - GO111MODULE=on
 
 script:
-  - make cover
+  - go install github.com/go-courier/husky
+  - husky cover
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
